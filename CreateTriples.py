@@ -1,17 +1,18 @@
 import osmium
-import numpy as np
 import pandas as pd
 import re
 import sys
 import urllib
 import time
 from rdflib import Graph, Namespace, URIRef, BNode, Literal
+from tqdm import tqdm
+from datetime import timedelta
 from rdflib.namespace import RDF, FOAF, XSD
 
-start = time.time()
 class osm2rdf_handler(osmium.SimpleHandler):
     def __init__(self):
-        osmium.SimpleHandler.__init__(self)    
+        osmium.SimpleHandler.__init__(self)
+        self.pbar=tqdm(desc='- Processing Nodes')
         self.counts=0
         self.g = Graph()
         self.graph = self.g
@@ -88,7 +89,7 @@ class osm2rdf_handler(osmium.SimpleHandler):
             elif p == 'wikidata':
                 sub = URIRef('http://www.worldkg.org/resource/' + s)
                 prop = URIRef("http://www.worldkg.org/schema/" + p)
-                if o.startswith('Q'):
+                if re.match(r'^Q[0-9]+$', o):
                     obj = URIRef('http://www.wikidata.org/wiki/' + o)
                 else:
                     obj = Literal(o)
@@ -118,6 +119,7 @@ class osm2rdf_handler(osmium.SimpleHandler):
         print(str(self.counts))
 
     def node(self, n):
+        self.pbar.update(1)
         if len(n.tags)>1:
             lat = str(n.location.lat)
             lon = str(n.location.lon)
@@ -130,7 +132,7 @@ class osm2rdf_handler(osmium.SimpleHandler):
             #self.printTriple(id, "lat", lat)
             #self.printTriple(id, "long", lon)
             self.printTriple(id, "Point", point)
-            self.printTriple(id,"osmLink",id)
+            self.printTriple(id, "osmLink", id)
 
 
             for k,v in n.tags:
@@ -144,8 +146,30 @@ class osm2rdf_handler(osmium.SimpleHandler):
                 k = k.replace(" ", "")
 
                 self.printTriple(id, k, val)
+
+start = time.time()
+
+if len(sys.argv) > 2:
+    osm_file_location = sys.argv[1]
+    target_file_location = sys.argv[2]
+else:
+    sys.exit('Not enough parameters')
+
+try:
+    with open(target_file_location, 'w') as file:
+        pass
+except IOError as err:
+    sys.exit(f'can not write to {target_file_location}')
+
+print('Compute WorldKG Triples:')
+print(f'- reading from {osm_file_location}')
+print(f'- will write to {target_file_location}')
+
 h = osm2rdf_handler()
-h.apply_file(sys.argv[1])
-h.graph.serialize(sys.argv[2],format="turtle", encoding = "utf-8" )
+h.apply_file(osm_file_location)
+h.pbar.close()
+h.graph.serialize(target_file_location, format="turtle", encoding = "utf-8" )
+
 end = time.time()
-print(end - start)
+
+print(f"Total runtime: {timedelta(seconds=end - start)}")
