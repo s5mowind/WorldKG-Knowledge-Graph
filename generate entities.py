@@ -47,7 +47,7 @@ spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be can
 spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')
 
 # predefined spatial relations to scan for
-wkg_relations = pd.read_csv(args.relations_file)
+wkg_relations = pd.read_csv(args.relation_file)
 
 # get all entities and targets with relations
 query_relation = """
@@ -77,4 +77,4 @@ for relation in pbar:
         relation_list.append(row)
 relation_df = pd.DataFrame(relation_list)  # subjects to look for partner for (heads)
 
-relation_df.to_parquet(args.relation_file, compression='gzip', engine='pyarrow')
+relation_df.to_parquet(args.subject_file, compression='gzip', engine='pyarrow')

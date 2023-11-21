@@ -1,0 +1,15 @@
+relations
+wkgs:isInCountry
+wkgs:isInContinent
+wkgs:isIn
+wkgs:addrPlace
+wkgs:country
+wkgs:addrState
+wkgs:isInCounty
+wkgs:addrSuburb
+wkgs:addrProvince
+wkgs:capitalCity
+wkgs:addrSubdistrict
+wkgs:addrCountry
+wkgs:addrDistrict
+wkgs:addrHamlet

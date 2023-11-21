@@ -36,7 +36,7 @@ candidates = pd.read_parquet(args.candidate_file)
 subjects = pd.read_parquet(args.subject_file)
 
 # precisions to use when comparing distances
-with open(args.geohas_precision, 'r') as f:
+with open(args.geohash_precision, 'r') as f:
     geohash_precision_map = json.load(f)
 
 with open(args.predicate_map, 'r') as f:
@@ -98,7 +98,7 @@ for index, row in tqdm(subjects.iterrows(), total=len(subjects), desc='- Finding
     lit = row['literal']
     if (gh, pred, lit) in matched:  # only consider new constellations for subjects
         # if these three values are the same, the uslp-score will also be the same
-        pairs.append((row['uri'], row['predicate']) + matched[(gh, pred, lit)])
+        pairs.append((row['uri'], pred, lit) + matched[(gh, pred, lit)])
     else:
         # prepare similarity and distance matrices for repetitive access
         dm_precision = distance_matrices[precision].loc[gh, :]
@@ -127,8 +127,5 @@ for index, row in tqdm(subjects.iterrows(), total=len(subjects), desc='- Finding
 print(f'- {(len(subjects) - len(matched))/len(subjects)*100:.2f}% of computations performed with dictionary')
 
 print(f'- saving results to {args.output_file}')
-with open(args.output_file, 'w', newline='') as f:
-    writer = csv.writer(f)
-    writer.writerow(['s', 'p', 'o', 'literal', 'score'])
-    for s, p, o, lit, score in pairs:
-        writer.writerow([s, p, o, lit, score])
+predictions = pd.DataFrame(pairs, columns=['s', 'p', 'literal', 'o', 'score'])
+predictions.to_csv(args.output_file, index=False)

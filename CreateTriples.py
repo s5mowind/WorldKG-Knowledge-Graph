@@ -177,7 +177,7 @@ h = osm2rdf_handler()
 h.apply_file(args.input_file)
 h.pbar.close()
 print(f'- writing to {args.output_file}')
-h.graph.serialize(args.output_file, format="turtle", encoding = "utf-8" )
+h.graph.serialize(args.output_file, format="turtle", encoding="utf-8" )
 
 end = time.time()
 
