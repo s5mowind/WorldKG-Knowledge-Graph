@@ -20,13 +20,13 @@ def haversine_from_geohash(hash1:str, hash2:str) -> float:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--candidate_file', type=str, default='candidates_embedding.parquet.zip')
-parser.add_argument('--subject_file', type=str, default='subjects_embedding.parquet.zip')
-parser.add_argument('--output_file', type=str, default='uslp-triplets.csv')
-parser.add_argument('--geohash_precision', type=str, default='geohash_precision.json')
-parser.add_argument('--predicate_map', type=str, default='predicate_map.json')
-parser.add_argument('--literal_map', type=str, default='literal_map.json')
-parser.add_argument('--type_map', type=str, default='type_map.json')
+parser.add_argument('--candidate_file', type=str, default='data/candidates_embedding.parquet.zip')
+parser.add_argument('--subject_file', type=str, default='data/subjects_embedding.parquet.zip')
+parser.add_argument('--output_file', type=str, default='data/uslp-triplets.csv')
+parser.add_argument('--geohash_precision', type=str, default='required files/geohash_precision.json')
+parser.add_argument('--predicate_map', type=str, default='data/predicate_map.json')
+parser.add_argument('--literal_map', type=str, default='data/literal_map.json')
+parser.add_argument('--type_map', type=str, default='data/type_map.json')
 
 args = parser.parse_args()
 

@@ -6,10 +6,10 @@ import argparse
 print('Retrieving Spatial Entities:')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--candidate_file', type=str, default='candidates.parquet.zip')
-parser.add_argument('--subject_file', type=str, default='subjects.parquet.zip')
-parser.add_argument('--graph_file', default='slovenia.ttl', type=str, help='ttl file containing the graph to read')
-parser.add_argument('--relation_file', default='relations.csv', type=str, help='file containing spatial predicates to predict matches for')
+parser.add_argument('--candidate_file', type=str, default='data/candidates.parquet.zip')
+parser.add_argument('--subject_file', type=str, default='data/subjects.parquet.zip')
+parser.add_argument('--graph_file', default='data/graph.ttl', type=str, help='ttl file containing the graph to read')
+parser.add_argument('--relation_file', default='required files/relations.csv', type=str, help='file containing spatial predicates to predict matches for')
 
 args = parser.parse_args()
 

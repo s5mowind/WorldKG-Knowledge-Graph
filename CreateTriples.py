@@ -32,12 +32,14 @@ class osm2rdf_handler(osmium.SimpleHandler):
         self.g.bind("rdfs", self.rdfs)
         self.rdf = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
         self.g.bind('rdf',self.rdf)
-        self.ogc=Namespace("http://www.opengis.net/rdf#")
+        self.ogc = Namespace("http://www.opengis.net/rdf#")
         self.g.bind('ogc',self.ogc)
         self.sf = Namespace("http://www.opengis.net/ont/sf#")
         self.g.bind('sf', self.sf)
         self.osmn = Namespace("https://www.openstreetmap.org/node/")
         self.g.bind("osmn", self.osmn)
+
+        self.namespace = {key: uri for key, uri in self.g.namespaces()}
 
         # load osm features and keys
         self.supersub = pd.read_csv(args.osm_features, sep='\t', encoding='utf-8')
@@ -62,45 +64,45 @@ class osm2rdf_handler(osmium.SimpleHandler):
     def printTriple(self, s, p, o):
         if p in self.dict_class: 
             if o in self.dict_class[p]:
-                rel = URIRef('http://www.worldkg.org/resource/' + s)
-                instanceOf = URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
-                res = URIRef('http://www.worldkg.org/schema/' + self.to_camel_case_classAppend(p,o))
-                self.g.add((rel, instanceOf , res))
+                rel = self.namespace['wkg'] + s
+                instanceOf = self.namespace['rdf'] + 'type'
+                res = self.namespace['wkgs'] + self.to_camel_case_classAppend(p, o)
+                self.g.add((rel, instanceOf, res))
             if o == 'Yes':
-                rel = URIRef('http://www.worldkg.org/resource/' + s)
-                instanceOf = URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
-                res = URIRef('http://www.worldkg.org/schema/' + self.to_camel_case_class(p))
-                self.g.add((rel, instanceOf , res))
+                rel = self.namespace['wkg'] + s
+                instanceOf = self.namespace['rdf'] + 'type'
+                res = self.namespace['wkgs'] + self.to_camel_case_class(p)
+                self.g.add((rel, instanceOf, res))
         else:
             if p=='Point':
-                sub = URIRef('http://www.worldkg.org/resource/' + s)
-                geoprop = URIRef('http://www.worldkg.org/schema/spatialObject')
-                geoobj = URIRef('http://www.worldkg.org/resource/geo' + s)
-                prop = URIRef('http://www.opengis.net/ont/sf#Point')
-                typ = URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
+                sub = self.namespace['wkg'] + s
+                geoprop = self.namespace['wkgs'] + 'spatialObject'
+                geoobj = self.namespace['wkg'] + 'geo' + s
+                prop = self.namespace['sf'] + 'Point'
+                typ = self.namespace['rdf'] + 'type'
                 self.g.add((sub, geoprop, geoobj))
                 self.g.add((geoobj, typ, prop))
                 self.g.add((geoobj, self.geo["asWKT"], Literal(o, datatype=self.geo.wktLiteral)))
             elif p == 'osmLink':
-                sub = URIRef('http://www.worldkg.org/resource/' + s)
-                prop = URIRef('http://www.worldkg.org/schema/osmLink')
-                obj = URIRef('https://www.openstreetmap.org/node/'+o)
-                self.g.add((sub,prop,obj))
+                sub = self.namespace['wkg'] + s
+                prop = self.namespace['wkgs'] + 'osmLink'
+                obj = self.namespace['osmn'] + o
+                self.g.add((sub, prop, obj))
             elif p == 'name':
-                sub = URIRef('http://www.worldkg.org/resource/' + s)
-                prop = URIRef('http://www.w3.org/2000/01/rdf-schema#label')
+                sub = self.namespace['wkg'] + s
+                prop = self.namespace['rdfs'] + 'label'
                 self.g.add((sub, prop, Literal(o)))
             elif p == 'wikidata':
-                sub = URIRef('http://www.worldkg.org/resource/' + s)
-                prop = URIRef("http://www.worldkg.org/schema/" + p)
+                sub = self.namespace['wkg'] + s
+                prop = self.namespace['wkgs'] + p
                 if re.match(r'^Q[0-9]+$', o):
-                    obj = URIRef('http://www.wikidata.org/wiki/' + o)
+                    obj = self.namespace['wd'] + o
                 else:
                     obj = Literal(o)
                 self.g.add((sub, prop, obj))
             elif p == 'wikipedia':
-                sub = URIRef('http://www.worldkg.org/resource/' + s)
-                prop = URIRef("http://www.worldkg.org/schema/wikipedia" )
+                sub = self.namespace['wkg'] + s
+                prop = self.namespace['wkgs'] + 'wikipedia'
                 try:
                     country = o.split(':')[0]
                     ids = o.split(':')[1]
@@ -115,8 +117,8 @@ class osm2rdf_handler(osmium.SimpleHandler):
                 self.g.add((sub, prop, obj))
             else:
                 if p in self.key_list:
-                    sub = URIRef('http://www.worldkg.org/resource/' + s)
-                    prop = URIRef("http://www.worldkg.org/schema/" + self.to_camel_case_key(p))
+                    sub = self.namespace['wkg'] + s
+                    prop = self.namespace['wkgs'] + self.to_camel_case_key(p)
                     self.g.add((sub, prop, Literal(o)))
         
     def __close__(self):
@@ -154,9 +156,9 @@ class osm2rdf_handler(osmium.SimpleHandler):
 start = time.time()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--osm_features', type=str, default='OSM_Ontology_map_features.csv')
-parser.add_argument('--key_list', type=str, default='Key_List.csv')
-parser.add_argument('--output_file', type=str, default='graph.ttl')
+parser.add_argument('--osm_features', type=str, default='required files/OSM_Ontology_map_features.csv')
+parser.add_argument('--key_list', type=str, default='required files/Key_List.csv')
+parser.add_argument('--output_file', type=str, default='data/graph.ttl')
 parser.add_argument('--input_file', type=str, required=True)
 
 args = parser.parse_args()

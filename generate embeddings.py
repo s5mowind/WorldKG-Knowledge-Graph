@@ -52,14 +52,14 @@ def generate_tail_label_embedding(label:str, name:str, model:gensim.models.fastt
     return embedding
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fasttext_file', type=str, help='location of fasttext binaries, if none present fasttext will be downloaded to this location')
-parser.add_argument('--candidate_input', type=str, default='candidates.parquet.zip')
-parser.add_argument('--subject_input', type=str, default='subjects.parquet.zip')
-parser.add_argument('--candidate_output', type=str, default='candidates_embedding.parquet.zip')
-parser.add_argument('--subject_output', type=str, default='subjects_embedding.parquet.zip')
-parser.add_argument('--predicate_map', type=str, default='predicate_map.json')
-parser.add_argument('--literal_map', type=str, default='literal_map.json')
-parser.add_argument('--type_map', type=str, default='type_map.json')
+parser.add_argument('--fasttext_file', required=True, type=str, help='location of fasttext binaries, if none present fasttext will be downloaded to this location')
+parser.add_argument('--candidate_input', type=str, default='data/candidates.parquet.zip')
+parser.add_argument('--subject_input', type=str, default='data/subjects.parquet.zip')
+parser.add_argument('--candidate_output', type=str, default='data/candidates_embedding.parquet.zip')
+parser.add_argument('--subject_output', type=str, default='data/subjects_embedding.parquet.zip')
+parser.add_argument('--predicate_map', type=str, default='data/predicate_map.json')
+parser.add_argument('--literal_map', type=str, default='data/literal_map.json')
+parser.add_argument('--type_map', type=str, default='data/type_map.json')
 args = parser.parse_args()
 
 print('Embedding generation starting:')
