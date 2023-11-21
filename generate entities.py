@@ -1,14 +1,21 @@
 from rdflib import Graph
 from tqdm import tqdm
 import pandas as pd
+import argparse
 
 print('Retrieving Spatial Entities:')
 
-print('- accessing Triplet storage')
-# probably easier to insert into virtuoso temporarily
-# ToDo: use virtuoso as triplet storage and access
+parser = argparse.ArgumentParser()
+parser.add_argument('--candidate_file', type=str, default='candidates.parquet.zip')
+parser.add_argument('--subject_file', type=str, default='subjects.parquet.zip')
+parser.add_argument('--graph_file', default='slovenia.ttl', type=str, help='ttl file containing the graph to read')
+parser.add_argument('--relation_file', default='relations.csv', type=str, help='file containing spatial predicates to predict matches for')
+
+args = parser.parse_args()
+
+print('- loading Graph Data')
 g = Graph()
-g.parse('slovenia.ttl')
+g.parse(args.graph_file)
 
 spatial_object_query = """
 PREFIX wkg: <http://www.worldkg.org/resource/>
@@ -36,12 +43,11 @@ for r in g.query(spatial_object_query):
            'label_en': r['nameEn'] if r['nameEn'] else '<UNK>'}
     spatial_objects.append(row)
 spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be candidates
-# prefiltering would be possible
 
-spat_obj_df.to_parquet('candidates.parquet.gzip', compression='gzip', engine='pyarrow')
+spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')
 
 # predefined spatial relations to scan for
-wkg_relations = pd.read_csv('relations.csv')
+wkg_relations = pd.read_csv(args.relations_file)
 
 # get all entities and targets with relations
 query_relation = """
@@ -71,4 +77,4 @@ for relation in pbar:
         relation_list.append(row)
 relation_df = pd.DataFrame(relation_list)  # subjects to look for partner for (heads)
 
-relation_df.to_parquet('subjects.parquet.gzip', compression='gzip', engine='pyarrow')
+relation_df.to_parquet(args.relation_file, compression='gzip', engine='pyarrow')

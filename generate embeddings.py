@@ -2,11 +2,11 @@ import pandas as pd
 import numpy as np
 import pygeohash
 import re
-from haversine import haversine
 import gensim
 import requests
 import os
 import json
+import argparse
 
 def wkt_to_geohash(wkt:str, precision:int=6) -> str:
     """
@@ -51,24 +51,33 @@ def generate_tail_label_embedding(label:str, name:str, model:gensim.models.fastt
         embedding = np.mean([embedding, generate_embedding(name, model)], axis=0)
     return embedding
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--fasttext_file', type=str, help='location of fasttext binaries, if none present fasttext will be downloaded to this location')
+parser.add_argument('--candidate_input', type=str, default='candidates.parquet.zip')
+parser.add_argument('--subject_input', type=str, default='subjects.parquet.zip')
+parser.add_argument('--candidate_output', type=str, default='candidates_embedding.parquet.zip')
+parser.add_argument('--subject_output', type=str, default='subjects_embedding.parquet.zip')
+parser.add_argument('--predicate_map', type=str, default='predicate_map.json')
+parser.add_argument('--literal_map', type=str, default='literal_map.json')
+parser.add_argument('--type_map', type=str, default='type_map.json')
+args = parser.parse_args()
+
 print('Embedding generation starting:')
 
-location = 'E:\Datasets/Embeddings'
-fasttext_file = 'cc.en.300.bin.gz'
 
 # download fasttext binaries if unavailable
-if not os.path.exists(os.path.join(location, fasttext_file)):
-    print(f'- no fasttext binary in {location}')
+if not os.path.exists(args.fasttext_file):
+    print(f'- no fasttext binary in {os.path.dirname(args.fasttext_file)}')
     print('- starting download')
     r = requests.get('https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz')
-    with open(os.path.join(location, fasttext_file), 'wb') as f:
+    with open(args.fasttext_file, 'wb') as f:
         f.write(r.content)
     print('- finished download')
 print('- loading fasttext model, this may take a while')
-ft_model = gensim.models.fasttext.load_facebook_model(os.path.join(location, fasttext_file))
+ft_model = gensim.models.fasttext.load_facebook_model(args.fasttext_file)
 
 print('- generating candidate embeddings')
-candidates = pd.read_parquet('candidates.parquet.gzip')
+candidates = pd.read_parquet(args.candidate_input)
 
 col_names = list(candidates.columns) + ['geohash'] + [f'label_emb{i}' for i in range(300)]
 # generate geohash encoding for location
@@ -80,13 +89,13 @@ candidates.columns = col_names
 # generate embeddings for unique types to reduce compuatation cost
 type_map = {obj_type: np.zeros(300).tolist() if obj_type == '<UNK>' else generate_embedding(obj_type, ft_model) for obj_type in candidates['type'].unique()}
 
-candidates.to_parquet('candidates_embedding.parquet.gzip', compression='gzip', engine='pyarrow')
+candidates.to_parquet(args.candidate_output, compression='gzip', engine='pyarrow')
 
-with open('type_map.json', 'w') as f:
+with open(args.type_map, 'w') as f:
     json.dump(type_map, f)
 
 print('- generating subject embeddings')
-subjects = pd.read_parquet('subjects.parquet.gzip')
+subjects = pd.read_parquet(args.subject_input)
 
 # generate geohash encoding for location
 subjects['geohash'] = subjects.apply(lambda row: wkt_to_geohash(row['location']), axis=1)
@@ -95,10 +104,10 @@ predicate_map = {pred: generate_embedding(pred.split(':')[-1], ft_model) for pre
 # generate embeddings for unique literals to reduce compuatation cost
 literal_map = {literal: generate_embedding(literal, ft_model) for literal in subjects['literal'].unique()}
 
-subjects.to_parquet('subjects_embedding.parquet.gzip', compression='gzip', engine='pyarrow')
+subjects.to_parquet(args.subject_output, compression='gzip', engine='pyarrow')
 
-with open('predicate_map.json', 'w') as f:
+with open(args.predicate_map, 'w') as f:
     json.dump(predicate_map, f)
 
-with open('literal_map.json', 'w') as f:
+with open(args.literal_map, 'w') as f:
     json.dump(literal_map, f)

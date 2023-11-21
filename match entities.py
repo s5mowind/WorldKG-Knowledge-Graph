@@ -5,7 +5,7 @@ from pygeohash import decode_exactly
 from tqdm import tqdm
 import csv
 from sklearn.metrics.pairwise import cosine_similarity
-
+import argparse
 
 def haversine_from_geohash(hash1:str, hash2:str) -> float:
     """
@@ -18,20 +18,32 @@ def haversine_from_geohash(hash1:str, hash2:str) -> float:
     hd = haversine(decode_exactly(hash1)[:2], decode_exactly(hash2)[:2])
     return hd
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--candidate_file', type=str, default='candidates_embedding.parquet.zip')
+parser.add_argument('--subject_file', type=str, default='subjects_embedding.parquet.zip')
+parser.add_argument('--output_file', type=str, default='uslp-triplets.csv')
+parser.add_argument('--geohash_precision', type=str, default='geohash_precision.json')
+parser.add_argument('--predicate_map', type=str, default='predicate_map.json')
+parser.add_argument('--literal_map', type=str, default='literal_map.json')
+parser.add_argument('--type_map', type=str, default='type_map.json')
+
+args = parser.parse_args()
+
 print('Matching entities:')
 
-candidates = pd.read_parquet('candidates_embedding.parquet.gzip')
-subjects = pd.read_parquet('subjects_embedding.parquet.gzip')
+candidates = pd.read_parquet(args.candidate_file)
+subjects = pd.read_parquet(args.subject_file)
 
 # precisions to use when comparing distances
-with open('geohash_precision.json', 'r') as f:
+with open(args.geohas_precision, 'r') as f:
     geohash_precision_map = json.load(f)
 
-with open('predicate_map.json', 'r') as f:
+with open(args.predicate_map, 'r') as f:
     predicate_map = json.load(f)
-with open('literal_map.json', 'r') as f:
+with open(args.literal_map, 'r') as f:
     literal_map = json.load(f)
-with open('type_map.json', 'r') as f:
+with open(args.type_map, 'r') as f:
     type_map = json.load(f)
 
 predicates = pd.DataFrame.from_dict(predicate_map, orient='index')
@@ -46,6 +58,20 @@ literal_cossim_df = pd.DataFrame(cos_sim_literal, index=candidates.index.to_list
 # cosine similarity matrix for similarity between predicates and types
 cos_sim_predicate = cosine_similarity(types.values, predicates.values)
 predicate_cossim_df = pd.DataFrame(cos_sim_predicate, index=types.index, columns=predicates.index)
+
+# precompute containment of candidate types in predicates
+contains_map = {}
+for predicate in tqdm(predicate_map.keys(), desc='- Computing type containment'):
+    similarities = {}
+    for t in type_map.keys():
+        similarity = 0
+        if t != '<UNK>':
+            if str(t) in predicate:
+                similarity = 0.5
+        similarities.update({t: similarity})
+    contains_map.update({predicate: similarities})
+type_contained = pd.DataFrame.from_dict(contains_map, orient='index')
+
 
 print('- the following distance matrices will be used')
 for precision in set(geohash_precision_map.values()):
@@ -78,12 +104,14 @@ for index, row in tqdm(subjects.iterrows(), total=len(subjects), desc='- Finding
         dm_precision = distance_matrices[precision].loc[gh, :]
         cossim_matching_predicate = predicate_cossim_df.loc[:, pred]
         cossim_matching_literal = literal_cossim_df.loc[:, lit]
+        contains_matching_predicate = type_contained.loc[pred, :]
 
         # iterate through candidates and compute uslp-score
         candidate_eval = candidates.apply(
             lambda cand: dm_precision.loc[cand['geohash'][:precision]]
                          + cossim_matching_predicate.loc[cand['type']]
-                         + cossim_matching_literal.loc[cand.name],
+                         + cossim_matching_literal.loc[cand.name]
+                         + contains_matching_predicate.loc[cand['type']],
             axis=1
         )
 
@@ -93,12 +121,14 @@ for index, row in tqdm(subjects.iterrows(), total=len(subjects), desc='- Finding
         best_candidate_score = candidate_eval[best_candidate]
 
         # store matches and save constellation
-        pairs.append((row['uri'], row['predicate'], best_candidate_uri, candidate_eval[best_candidate]))
+        pairs.append((row['uri'], pred, lit, best_candidate_uri, candidate_eval[best_candidate]))
         matched.update({(gh, pred, lit): (best_candidate_uri, best_candidate_score)})
 
 print(f'- {(len(subjects) - len(matched))/len(subjects)*100:.2f}% of computations performed with dictionary')
 
-with open('uslp-triplets.csv', 'w', newline='') as f:
+print(f'- saving results to {args.output_file}')
+with open(args.output_file, 'w', newline='') as f:
     writer = csv.writer(f)
-    for s, p, o, score in pairs:
-        writer.writerow([s, p, o, score])
+    writer.writerow(['s', 'p', 'o', 'literal', 'score'])
+    for s, p, o, lit, score in pairs:
+        writer.writerow([s, p, o, lit, score])

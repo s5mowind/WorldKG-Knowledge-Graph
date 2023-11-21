@@ -4,16 +4,18 @@ import re
 import sys
 import urllib
 import time
-from rdflib import Graph, Namespace, URIRef, BNode, Literal
+from rdflib import Graph, Namespace, URIRef, Literal
 from tqdm import tqdm
 from datetime import timedelta
-from rdflib.namespace import RDF, FOAF, XSD
+import argparse
 
 class osm2rdf_handler(osmium.SimpleHandler):
     def __init__(self):
         osmium.SimpleHandler.__init__(self)
         self.pbar=tqdm(desc='- Processing Nodes')
         self.counts=0
+
+        # prepare Graph namespace
         self.g = Graph()
         self.graph = self.g
         self.wd = Namespace("http://www.wikidata.org/wiki/")
@@ -36,8 +38,10 @@ class osm2rdf_handler(osmium.SimpleHandler):
         self.g.bind('sf', self.sf)
         self.osmn = Namespace("https://www.openstreetmap.org/node/")
         self.g.bind("osmn", self.osmn)
-        self.supersub = pd.read_csv('OSM_Ontology_map_features.csv', sep='\t', encoding='utf-8')
-        self.key_list = pd.read_csv('Key_List.csv', sep='\t', encoding='utf-8')
+
+        # load osm features and keys
+        self.supersub = pd.read_csv(args.osm_features, sep='\t', encoding='utf-8')
+        self.key_list = pd.read_csv(args.key_list, sep='\t', encoding='utf-8')
         self.key_list = list(self.key_list['key'])
         self.supersub = self.supersub.drop_duplicates()
         
@@ -149,27 +153,30 @@ class osm2rdf_handler(osmium.SimpleHandler):
 
 start = time.time()
 
-if len(sys.argv) > 2:
-    osm_file_location = sys.argv[1]
-    target_file_location = sys.argv[2]
-else:
-    sys.exit('Not enough parameters')
+parser = argparse.ArgumentParser()
+parser.add_argument('--osm_features', type=str, default='OSM_Ontology_map_features.csv')
+parser.add_argument('--key_list', type=str, default='Key_List.csv')
+parser.add_argument('--output_file', type=str, default='graph.ttl')
+parser.add_argument('--input_file', type=str, required=True)
+
+args = parser.parse_args()
 
 try:
-    with open(target_file_location, 'w') as file:
+    with open(args.output_file, 'w') as file:
         pass
 except IOError as err:
-    sys.exit(f'can not write to {target_file_location}')
+    sys.exit(f'can not write to {args.output_file}')
 
 print('Compute WorldKG Triples:')
-print(f'- reading from {osm_file_location}')
-print(f'- will write to {target_file_location}')
+print(f'- reading from {args.input_file}')
+print(f'- will write to {args.output_file}')
 
 h = osm2rdf_handler()
-h.apply_file(osm_file_location)
+h.apply_file(args.input_file)
 h.pbar.close()
-h.graph.serialize(target_file_location, format="turtle", encoding = "utf-8" )
+print(f'- writing to {args.output_file}')
+h.graph.serialize(args.output_file, format="turtle", encoding = "utf-8" )
 
 end = time.time()
 
-print(f"Total runtime: {timedelta(seconds=end - start)}")
+print(f"- Total runtime: {timedelta(seconds=end - start)}")
