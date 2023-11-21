@@ -85,7 +85,8 @@ for p in tqdm(set(geohash_precision_map.values()), desc='- Computing distance ma
     # pass into dataframe and normalize
     distance_frame = pd.DataFrame.from_dict(dist_mat, orient='index')
     max_val = distance_frame.values.max()
-    distance_frame = pd.DataFrame(1 - (distance_frame.values / max_val), columns=distance_frame.columns, index=distance_frame.index)
+    if max_val > 0:
+        distance_frame = pd.DataFrame(1 - (distance_frame.values / max_val), columns=distance_frame.columns, index=distance_frame.index)
     distance_matrices.update({p: distance_frame})
 
 matched = {}
