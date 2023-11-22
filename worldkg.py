@@ -14,7 +14,6 @@ parser.add_argument('--fasttext_file', required=True, type=str, help='location o
 parser.add_argument('--geofabrik_name', type=str, help='name of pbf file to download, such as liechtenstein or australia-oceania')
 args = parser.parse_args()
 
-print(args)
 
 if args.download_osm:
     if args.geofabrik_name:
