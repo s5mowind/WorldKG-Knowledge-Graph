@@ -13,7 +13,7 @@ group_input.add_argument('--download_osm', action='store_true', default=False, h
 group_fasttext = parser.add_mutually_exclusive_group(required=True)
 group_fasttext.add_argument('--download_fasttext', action='store_true', default=False, help='toggle direct download of fasttext from fbai')
 group_fasttext.add_argument('--fasttext_file', type=str, help='location of fasttext binaries')
-parser.add_argument('--geofabrik_name', type=str, help='name of pbf file to download, such as liechtenstein or australia-oceania')
+parser.add_argument('--geofabrik_name', type=str, help='name of pbf file to download, such as europe/liechtenstein or australia-oceania')
 parser.add_argument('--output_file', type=str, default='updated_graph.ttl', help='name of file containing connected WorldKG triples')
 parser.add_argument('--cut_off', default=1.5, type=float, help='minimum score to achieve for predicted links to be considered')
 args = parser.parse_args()
@@ -22,7 +22,7 @@ args = parser.parse_args()
 if args.download_osm:
     if args.geofabrik_name:
         print(f'Downloading OSM File: {args.geofabrik_name}')
-        r = requests.get(f'https://download.geofabrik.de/europe/{args.geofabrik_name}-latest.osm.pbf')
+        r = requests.get(f'https://download.geofabrik.de/{args.geofabrik_name}-latest.osm.pbf')
         with open(f'{args.geofabrik_name}-latest.osm.pbf', 'wb') as f:
             f.write(r.content)
         print('- finished download')
