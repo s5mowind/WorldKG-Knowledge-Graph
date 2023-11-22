@@ -23,10 +23,10 @@ if args.download_osm:
     if args.geofabrik_name:
         print(f'Downloading OSM File: {args.geofabrik_name}')
         r = requests.get(f'https://download.geofabrik.de/{args.geofabrik_name}-latest.osm.pbf')
-        with open(f'{args.geofabrik_name}-latest.osm.pbf', 'wb') as f:
+        with open(f'{os.path.basename(args.geofabrik_name)}-latest.osm.pbf', 'wb') as f:
             f.write(r.content)
         print('- finished download')
-        pbf_file = f'{args.geofabrik_name}-latest.osm.pbf'
+        pbf_file = f'{os.path.basename(args.geofabrik_name)}-latest.osm.pbf'
     else:
         raise ValueError('no region name for geofabrik stated')
 else:
