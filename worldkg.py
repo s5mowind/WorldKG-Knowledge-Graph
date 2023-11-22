@@ -14,6 +14,8 @@ group_fasttext = parser.add_mutually_exclusive_group(required=True)
 group_fasttext.add_argument('--download_fasttext', action='store_true', default=False, help='toggle direct download of fasttext from fbai')
 group_fasttext.add_argument('--fasttext_file', type=str, help='location of fasttext binaries')
 parser.add_argument('--geofabrik_name', type=str, help='name of pbf file to download, such as liechtenstein or australia-oceania')
+parser.add_argument('--output_file', type=str, default='updated_graph.ttl', help='name of file containing connected WorldKG triples')
+parser.add_argument('--cut_off', default=1.5, type=float, help='minimum score to achieve for predicted links to be considered')
 args = parser.parse_args()
 
 
@@ -53,7 +55,7 @@ os.system(f"python CreateTriples.py --input_file {pbf_file}")
 os.system("python \"generate entities.py\"")
 os.system(f"python \"generate embeddings.py\" --fasttext_file {ft_file}")
 os.system("python \"match entities.py\"")
-os.system("python \"update graph.py\"")
+os.system(f"python \"update graph.py\" --output_file {args.output_file} --cut_off {args.cut_off}")
 
 print('Finished generation')
 end = time.time()
