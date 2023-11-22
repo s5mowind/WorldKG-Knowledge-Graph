@@ -12,7 +12,7 @@ group_input.add_argument('--input_file', type=str, help='PBF file containing OSM
 group_input.add_argument('--download_osm', action='store_true', default=False, help='toggle direct download of osm file from geofabrik')
 group_fasttext = parser.add_mutually_exclusive_group(required=True)
 group_fasttext.add_argument('--download_fasttext', action='store_true', default=False, help='toggle direct download of fasttext from fbai')
-group_fasttext.add_argument('--fasttext_file', required=True, type=str, help='location of fasttext binaries')
+group_fasttext.add_argument('--fasttext_file', type=str, help='location of fasttext binaries')
 parser.add_argument('--geofabrik_name', type=str, help='name of pbf file to download, such as liechtenstein or australia-oceania')
 args = parser.parse_args()
 
