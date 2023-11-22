@@ -3,8 +3,6 @@ import numpy as np
 import pygeohash
 import re
 import gensim
-import requests
-import os
 import json
 import argparse
 
@@ -52,7 +50,7 @@ def generate_tail_label_embedding(label:str, name:str, model:gensim.models.fastt
     return embedding
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fasttext_file', required=True, type=str, help='location of fasttext binaries, if none present fasttext will be downloaded to this location')
+parser.add_argument('--fasttext_file', required=True, type=str, help='location of fasttext binaries')
 parser.add_argument('--candidate_input', type=str, default='data/candidates.parquet.zip')
 parser.add_argument('--subject_input', type=str, default='data/subjects.parquet.zip')
 parser.add_argument('--candidate_output', type=str, default='data/candidates_embedding.parquet.zip')
@@ -64,15 +62,6 @@ args = parser.parse_args()
 
 print('Embedding generation starting:')
 
-
-# download fasttext binaries if unavailable
-if not os.path.exists(args.fasttext_file) and os.path.exists(os.path.dirname(args.fasttext_file)):
-    print(f'- no fasttext binary in {os.path.dirname(args.fasttext_file)}')
-    print('- downloading fasttext binaries')
-    r = requests.get('https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz')
-    with open(args.fasttext_file, 'wb') as f:
-        f.write(r.content)
-    print('- finished download')
 print('- loading fasttext model, this may take a while')
 ft_model = gensim.models.fasttext.load_facebook_model(args.fasttext_file)
 
