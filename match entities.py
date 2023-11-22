@@ -3,7 +3,6 @@ import pandas as pd
 from haversine import haversine
 from pygeohash import decode_exactly
 from tqdm import tqdm
-import csv
 from sklearn.metrics.pairwise import cosine_similarity
 import argparse
 

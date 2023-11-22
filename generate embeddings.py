@@ -66,7 +66,7 @@ print('Embedding generation starting:')
 
 
 # download fasttext binaries if unavailable
-if not os.path.exists(args.fasttext_file):
+if not os.path.exists(args.fasttext_file) and os.path.exists(os.path.dirname(args.fasttext_file)):
     print(f'- no fasttext binary in {os.path.dirname(args.fasttext_file)}')
     print('- downloading fasttext binaries')
     r = requests.get('https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz')

@@ -14,9 +14,13 @@ parser.add_argument('--relation_file', default='required files/relations.csv', t
 args = parser.parse_args()
 
 print('- loading Graph Data')
+# we can integrate generate entities into CreateTriples to remove this loadtime for Graph.parse
+# we decided against it to keep the different steps distinct and easy to read
 g = Graph()
 g.parse(args.graph_file)
 
+# all spatial objects with a position as WKT and a label
+# these are the candidates that literals can be mapped to
 spatial_object_query = """
 PREFIX wkg: <http://www.worldkg.org/resource/>
 PREFIX wkgs: <http://www.worldkg.org/schema/>
@@ -42,14 +46,15 @@ for r in g.query(spatial_object_query):
            'type': r['type'].split('/')[-1] if r['type'] else '<UNK>',
            'label_en': r['nameEn'] if r['nameEn'] else '<UNK>'}
     spatial_objects.append(row)
-spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be candidates
+spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be candidates (tails)
 
 spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')
 
 # predefined spatial relations to scan for
 wkg_relations = pd.read_csv(args.relation_file)
 
-# get all entities and targets with relations
+# get all entities and targets with predicates regarding the defined spatial relations
+# these will be the heads to update from s, p, literal to s, p, o for a more connected knowledge graph
 query_relation = """
 PREFIX wkg: <http://www.worldkg.org/resource/>
 PREFIX wkgs: <http://www.worldkg.org/schema/>
