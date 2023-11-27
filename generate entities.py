@@ -10,6 +10,7 @@ parser.add_argument('--candidate_file', type=str, default='data/candidates.parqu
 parser.add_argument('--subject_file', type=str, default='data/subjects.parquet.zip')
 parser.add_argument('--graph_file', default='data/graph.ttl', type=str, help='ttl file containing the graph to read')
 parser.add_argument('--relation_file', default='required files/relations.csv', type=str, help='file containing spatial predicates to predict matches for')
+parser.add_argument('--class_file', default='required files/relevant_classes.csv', type=str, help='file containing all types relevant for candidates')
 
 args = parser.parse_args()
 
@@ -31,21 +32,25 @@ SELECT ?item ?name ?pos ?type ?nameEn
 WHERE {
 ?item wkgs:spatialObject ?obj.
 ?item rdfs:label ?name.
+?item rdf:type wkgs:%s.
 ?obj geo:asWKT ?pos.
-OPTIONAL { ?item rdf:type ?type .}
 OPTIONAL { ?item wkgs:nameEn ?nameEn}
 }
 """
 
+obj_type = pd.read_csv(args.class_file, header=None, names=['type'])
+
 print('- retrieving candidates')
 spatial_objects = []
-for r in g.query(spatial_object_query):
-    row = {'uri': f"wkg:{r['item'].split('/')[-1]}",
-           'label': r['name'],
-           'location': r['pos'],
-           'type': r['type'].split('/')[-1] if r['type'] else '<UNK>',
-           'label_en': r['nameEn'] if r['nameEn'] else '<UNK>'}
-    spatial_objects.append(row)
+
+for class_type in tqdm([s.split('/')[-1] for s in obj_type['type']]):
+    for r in g.query(spatial_object_query % class_type):
+        row = {'uri': f"wkg:{r['item'].split('/')[-1]}",
+               'label': r['name'],
+               'location': r['pos'],
+               'type': class_type,
+               'label_en': r['nameEn'] if r['nameEn'] else '<UNK>'}
+        spatial_objects.append(row)
 spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be candidates (tails)
 
 spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')

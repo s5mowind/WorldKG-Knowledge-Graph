@@ -155,7 +155,7 @@ parser.add_argument('--osm_features', type=str, default='required files/OSM_Onto
 parser.add_argument('--key_list', type=str, default='required files/Key_List.csv')
 parser.add_argument('--output_file', type=str, default='data/graph.ttl')
 parser.add_argument('--input_file', type=str, required=True)
-parser.add_argument('--min_tags', type=int, default=1)
+parser.add_argument('--min_tags', type=int, default=2)
 
 args = parser.parse_args()
 
