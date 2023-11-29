@@ -53,6 +53,8 @@ for class_type in tqdm([s.split('/')[-1] for s in obj_type['type']]):
         spatial_objects.append(row)
 spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be candidates (tails)
 
+print(f'- number of candidates: {len(spat_obj_df)}')
+
 spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')
 
 # predefined spatial relations to scan for
@@ -86,5 +88,7 @@ for relation in pbar:
                'location': r['pos']}
         relation_list.append(row)
 relation_df = pd.DataFrame(relation_list)  # subjects to look for partner for (heads)
+
+print(f'- number of relations: {len(relation_df)}')
 
 relation_df.to_parquet(args.subject_file, compression='gzip', engine='pyarrow')
