@@ -11,6 +11,7 @@ parser.add_argument('--subject_file', type=str, default='data/subjects.parquet.z
 parser.add_argument('--graph_file', default='data/graph.ttl', type=str, help='ttl file containing the graph to read')
 parser.add_argument('--relation_file', default='required files/relations.csv', type=str, help='file containing spatial predicates to predict matches for')
 parser.add_argument('--class_file', default='required files/relevant_classes.csv', type=str, help='file containing all types relevant for candidates')
+parser.add_argument('--verbose', action='store_true', default=False, help='print enhanced head and tail information')
 
 args = parser.parse_args()
 
@@ -55,6 +56,10 @@ spat_obj_df = pd.DataFrame(spatial_objects)  # these spatial objects will be can
 
 print(f'- number of candidates: {len(spat_obj_df)}')
 
+if args.verbose:
+    print(spat_obj_df['type'].value_counts()[:15])
+
+
 spat_obj_df.to_parquet(args.candidate_file, compression='gzip', engine='pyarrow')
 
 # predefined spatial relations to scan for
@@ -73,6 +78,7 @@ WHERE {
 ?item wkgs:%s ?o.
 ?item wkgs:spatialObject ?geoObj.
 ?geoObj geo:asWKT ?pos .
+OPTIONAL {?item rdf:type ?type}
 }
 """
 
@@ -85,10 +91,14 @@ for relation in pbar:
         row = {'uri': f"wkg:{r['item'].split('/')[-1]}",
                'predicate': relation,
                'literal': r['o'],
-               'location': r['pos']}
+               'location': r['pos'],
+               'type': r['type'].split('/')[-1] if r['type'] else '<UNK>'}
         relation_list.append(row)
 relation_df = pd.DataFrame(relation_list)  # subjects to look for partner for (heads)
 
 print(f'- number of relations: {len(relation_df)}')
+
+if args.verbose:
+    print(relation_df['predicate'].value_counts())
 
 relation_df.to_parquet(args.subject_file, compression='gzip', engine='pyarrow')
