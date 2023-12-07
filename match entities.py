@@ -5,6 +5,7 @@ from pygeohash import decode_exactly
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 import argparse
+import re
 
 def haversine_from_geohash(hash1:str, hash2:str) -> float:
     """
@@ -58,6 +59,10 @@ literal_cossim_df = pd.DataFrame(cos_sim_literal, index=candidates.index.to_list
 cos_sim_predicate = cosine_similarity(types.values, predicates.values)
 predicate_cossim_df = pd.DataFrame(cos_sim_predicate, index=types.index, columns=predicates.index)
 
+# introduce preselection step.
+# need to group heads by predicate types
+# find possible candidate types by type if contained in predicate
+
 # precompute containment of candidate types in predicates
 contains_map = {}
 for predicate in tqdm(predicate_map.keys(), desc='- Computing type containment'):
@@ -90,39 +95,56 @@ for p in tqdm(set(geohash_precision_map.values()), desc='- Computing distance ma
 
 matched = {}
 pairs = []
-for index, row in tqdm(subjects.iterrows(), total=len(subjects), desc='- Finding matches'):
-    # save core properties for repetitive access
-    precision = geohash_precision_map[row['predicate']]
-    gh = row['geohash'][:precision]
-    pred = row['predicate']
-    lit = row['literal']
-    if (gh, pred, lit) in matched:  # only consider new constellations for subjects
-        # if these three values are the same, the uslp-score will also be the same
-        pairs.append((row['uri'], pred, lit) + matched[(gh, pred, lit)])
+pbar = tqdm(subjects['predicate'].value_counts().index, desc='Matching by predicate:')
+for relation in pbar:
+    pbar.set_postfix_str(f'{relation}')
+    selected_subjects = subjects[subjects['predicate'] == relation]
+    selected_candidates = candidates
+
+    # prefilter for faster runtime
+    if re.match(r'.*Country$', relation, re.IGNORECASE):
+        pbar.write(f'- restricting candidates for {relation}')
+        selected_candidates = candidates[candidates['type'] == 'Country']
+    elif re.match(r'.*County$', relation, re.IGNORECASE):
+        pbar.write(f'- restricting candidates for {relation}')
+        selected_candidates = candidates[candidates['type'] == 'County']
+
+    if len(selected_candidates) == 0:
+        pbar.write(f'- no candidates for {relation}: skipping')
     else:
-        # prepare similarity and distance matrices for repetitive access
-        dm_precision = distance_matrices[precision].loc[gh, :]
-        cossim_matching_predicate = predicate_cossim_df.loc[:, pred]
-        cossim_matching_literal = literal_cossim_df.loc[:, lit]
-        contains_matching_predicate = type_contained.loc[pred, :]
+        for index, row in tqdm(selected_subjects.iterrows(), total=len(selected_subjects), desc=f'- Finding matches {relation}'):
+            # save core properties for repetitive access
+            precision = geohash_precision_map[row['predicate']]
+            gh = row['geohash'][:precision]
+            pred = row['predicate']
+            lit = row['literal']
+            if (gh, pred, lit) in matched:  # only consider new constellations for subjects
+                # if these three values are the same, the uslp-score will also be the same
+                pairs.append((row['uri'], pred, lit) + matched[(gh, pred, lit)])
+            else:
+                # prepare similarity and distance matrices for repetitive access
+                dm_precision = distance_matrices[precision].loc[gh, :]
+                cossim_matching_predicate = predicate_cossim_df.loc[:, pred]
+                cossim_matching_literal = literal_cossim_df.loc[:, lit]
+                contains_matching_predicate = type_contained.loc[pred, :]
 
-        # iterate through candidates and compute uslp-score
-        candidate_eval = candidates.apply(
-            lambda cand: dm_precision.loc[cand['geohash'][:precision]]
-                         + cossim_matching_predicate.loc[cand['type']]
-                         + cossim_matching_literal.loc[cand.name]
-                         + contains_matching_predicate.loc[cand['type']],
-            axis=1
-        )
+                # iterate through candidates and compute uslp-score
+                candidate_eval = selected_candidates.apply(
+                    lambda cand: dm_precision.loc[cand['geohash'][:precision]]
+                                 + cossim_matching_predicate.loc[cand['type']]
+                                 + cossim_matching_literal.loc[cand.name]
+                                 + contains_matching_predicate.loc[cand['type']],
+                    axis=1
+                )
 
-        # find best candidate
-        best_candidate = candidate_eval.idxmax()
-        best_candidate_uri = candidates.loc[best_candidate, 'uri']
-        best_candidate_score = candidate_eval[best_candidate]
+                # find best candidate
+                best_candidate = candidate_eval.idxmax()
+                best_candidate_uri = candidates.loc[best_candidate, 'uri']
+                best_candidate_score = candidate_eval[best_candidate]
 
-        # store matches and save constellation
-        pairs.append((row['uri'], pred, lit, best_candidate_uri, candidate_eval[best_candidate]))
-        matched.update({(gh, pred, lit): (best_candidate_uri, best_candidate_score)})
+                # store matches and save constellation
+                pairs.append((row['uri'], pred, lit, best_candidate_uri, candidate_eval[best_candidate]))
+                matched.update({(gh, pred, lit): (best_candidate_uri, best_candidate_score)})
 
 print(f'- {(len(subjects) - len(matched))/len(subjects)*100:.2f}% of computations performed with dictionary')
 
