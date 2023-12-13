@@ -51,11 +51,11 @@ if not os.path.exists('data/'):
     print('- creating data directory')
     os.makedirs('data')
 
-os.system(f"python CreateTriples.py --input_file {pbf_file}")
-os.system("python \"generate entities.py\"")
-os.system(f"python \"generate embeddings.py\" --fasttext_file {ft_file}")
-os.system("python \"match entities.py\"")
-os.system(f"python \"update graph.py\" --output_file {args.output_file} --cut_off {args.cut_off}")
+os.system(f"python create_triples.py --input_file {pbf_file}")
+os.system("python generate_entities.py")
+os.system(f"python generate_embeddings.py --fasttext_file {ft_file}")
+os.system("python match_entities.py")
+os.system(f"python update_graph.py --output_file {args.output_file} --cut_off {args.cut_off}")
 
 print('Finished generation')
 end = time.time()
