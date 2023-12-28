@@ -16,7 +16,7 @@ g = Graph()
 g.parse(args.graph_file)
 
 # import uslp predictions
-predictions = pd.read_csv(args.prediction_file)
+predictions = pd.read_csv(args.prediction_file, skip_blank_lines=True, sep='\t')
 predictions = predictions[['s', 'p', 'o', 'literal', 'score']]
 
 # extract namespace for uri reconstruction
