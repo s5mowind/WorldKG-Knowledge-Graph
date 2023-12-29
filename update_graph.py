@@ -8,7 +8,7 @@ parser.add_argument('--graph_file', default='data/graph.ttl', type=str, help='tt
 parser.add_argument('--prediction_file', default='data/uslp-triplets.csv', type=str, help='csv file containing uslp predictions')
 parser.add_argument('--output_file', default='updated_graph.ttl', type=str, help='file location to write updated graph to')
 parser.add_argument('--cut_off', default=1.5, type=float, help='minimum score to achieve for updates to occur')
-args = parser.parse_args(args=[])
+args = parser.parse_args()
 
 # import unlinked knowledge graph
 print('- loading Graph Data')
