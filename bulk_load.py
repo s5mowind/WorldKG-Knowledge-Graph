@@ -77,7 +77,7 @@ if not os.path.exists('data/'):
     print('- creating data directory')
     os.makedirs('data')
 
-for country in countries[:2]:
+for country in countries:
     print(f'bulk running: {country}')
     os.system(f"python worldkg.py --fasttext_file {ft_file} --input_file {os.path.join(args.from_directory, f'{country}-latest.osm.pbf')} --output_file {os.path.join(args.output_directory, f'{country}.ttl')}")
 
