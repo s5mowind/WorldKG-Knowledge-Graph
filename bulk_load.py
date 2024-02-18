@@ -77,8 +77,8 @@ if not os.path.exists('data/'):
     print('- creating data directory')
     os.makedirs('data')
 
-for country in countries:
-    print(f'bulk running: {country}')
+for pos, country in enumerate(countries):
+    print(f'bulk running: {country} {pos+1}/{len(countries)}')
     os.system(f"python worldkg.py --fasttext_file {ft_file} --input_file {os.path.join(args.from_directory, f'{country}-latest.osm.pbf')} --output_file {os.path.join(args.output_directory, f'{country}.ttl')}")
 
 end = time.time()
