@@ -31,21 +31,21 @@ if args.from_directory:
     print('found the following pbf files:', countries)
 else:
     if args.use_predefined:
-        match args.geofabrik_continent:
-            case 'asia':
+        if args.geofabrik_continent:
+            if args.geofabrik_continent == 'asia':
                 countries = ['afghanistan', 'armenia', 'azerbaijan', 'bangladesh', 'bhutan', 'cambodia', 'gcc-states',
                              'iran', 'iraq', 'israel-and-palestine', 'jordan', 'kazakhstan', 'kyrgyzstan', 'laos',
                              'lebanon', 'malaysia-singapore-brunei', 'maldives', 'mongolia', 'myanmar', 'nepal',
                              'north-korea', 'pakistan', 'philippines', 'south-korea', 'sri-lanka', 'syria', 'taiwan',
                              'tajikistan', 'thailand', 'turkmenistan', 'uzbekistan', 'vietnam', 'yemen']
-            case 'europe':
+            elif args.geofabrik_continent == 'europe':
                 countries = ['albania', 'andorra', 'azores', 'belarus', 'bosnia-herzegovina', 'bulgaria', 'croatia',
                              'cyprus', 'estonia', 'faroe-islands', 'finland', 'georgia', 'greece', 'guernsey-jersey',
                              'hungary', 'iceland', 'ireland-and-northern-ireland', 'isle-of-man', 'kosovo', 'latvia',
                              'liechtenstein', 'lithuania', 'luxembourg', 'macedonia', 'malta', 'moldova', 'monaco',
                              'montenegro', 'portugal', 'romania', 'serbia', 'slovakia', 'slovenia', 'sweden',
                              'switzerland', 'turkey', 'ukraine']
-            case _:
+            else:
                 raise argparse.ArgumentError(continent_arg, 'no predefined countries present')
     else:
         countries = args.custom_countries
