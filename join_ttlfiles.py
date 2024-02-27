@@ -18,9 +18,10 @@ print(f'Joining files and writing to {args.output_file}')
 
 # parse replacements if present
 replacements = {}
-for pair in args.replacement_pairs:
-    prefix, uri = pair.split('=')
-    replacements.update({prefix: uri})
+if args.replacement_pairs:
+    for pair in args.replacement_pairs:
+        prefix, uri = pair.split('=')
+        replacements.update({prefix: uri})
 
 # read file names
 files = []
