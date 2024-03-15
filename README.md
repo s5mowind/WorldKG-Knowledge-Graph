@@ -5,41 +5,52 @@
 This repository contains code to reproduce the WorldKG knowledge graph. 
 The WorldKG knowledge graph is a comprehensive large-scale geospatial knowledge graph based on OpenStreetMap that provides semantic representation of geographic entities from over 188 countries. WorldKG contains higher representation of geographic entities compared to other knowledge graph and can be used as an underlying data source for various applications such as geospatial question answering, geospatial data retrieval, and other cross-domain semantic data-driven applications.
 
-<h3>Prerequisites</h3>
-<ul>
-	<li>Python >= 3.7</li>
-</ul>
+### Prerequisites
+
+- Python >= 3.7
 
 
-<h3>Setup</h3>
-<p>Steps to create the WorldKG triples for the particular OSM snapshot.</p>
-<ol>
-    <li>Clone the repository
-		git clone https://github.com/alishiba14/WorldKG-Knowledge-Graph.git<br>
-		cd WorldKG-Knowledge-Graph
-	</li>
-    <li>Install the Python Requirements
-		pip install -r requirements.txt
-	</li>
+### Setup
+Steps to create the WorldKG triples for the particular OSM snapshot:
+- Install the Python Requirements: `pip install -r requirements.txt`
 
+#### Create basic triples  
+The basic WorldKG triples can still be created by running the create_triples script:  
+```
+python create_triples.py /path-to-pbf-file /path-to-the-ttl-file-to-save-triples 
+```
 
-<li>Download the specific OpenStreetMap snapshot, e.g., from <a href="https://download.geofabrik.de/" target="_blank">https://download.geofabrik.de/</a>. We recommend using the osm.pbf format.</li>
+#### Create connected triples  
+The full WorldKG pipeline creates triples and creates connections from relations to static strings by replacing the string with the corresponding entity.
+This is achieved with an unsupervised similarity score. To run the full pipeline proceed as follows:  
+Either download the OpenStreetMap snapshot from any source of choice or use the download feature from the `worldkg.py` script.  
+Either download the FastText Binary from any source of choice or use the download feature from the `worldkg.py` script.  
+Run the `worldkg.py` script as:  
+*without download:*
+```
+python worldkg.py --input_file /path-to-pbf-file --fasttext_file /path-to-fasttext-file
+```
+*with download:*
+```
+python worldkg.py --download_osm --geofabrik_name continent/country --download_fasttext
+```
+*Script parameters:*  
+- `--input_file`: path to the pbf file containing the osm data 
+- `--fasttext_file`: path to the file containing the fasttext binary 
+- `--output_file`: path to write the final updated graph to (default: `updated_graph.ttl`) 
+- `--download_osm`: toggle direct download of osm files from https://download.geofabrik.de/ 
+- `--geofabrik_name`: which osm file to download. Selected according to geofabrik website structure. For a whole continent such as africa use e.g. `africa`. For a country within a continent check the website and specify like `europe/germany` 
+- `--download_fasttext`: toggle direct download of fasttext binary from https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz 
+- `--cut_off`: minimum similarity to create a link between entities. Select from the range between 1 and 2
 
-<li>Run the CreateTriples.py:
+#### Useful additional features  
+The script `bulk_load.py` allows for processing multiple runs in a row. Either use the predefined lists for small countries in europe and asia, provide files from a directory, or download a list of references from geofabrik.
+Files are downloaded first and then processed to prevent having to alter the input list, when errors occurr in linking.  
+`replace_prefixes.py` changes the prefixes in a ttl file that has been computed already. To replace a prefix specify the prefix as well as the replacement value as such: `wkg=http://worldkg-dsis.iai.uni-bonn.de:8894/resource/`  
+For faster processing triplets can be created individually and joined later. To join ttl files use the `join_ttlfiles.py` script. A change of prefixes can also be specified for the join.
 
-python3 CreateTriples.py /path-to-pbf-file /path-to-the-ttl-file-to-save-triples 
-
-Example: python3 CreateTriples.py italy-latest.osm.pbf italyTriples.ttl</li>
-</ol>
-
-<h3>File Structure</h3>
-
-<li>Key_List.csv - Contains list of OSM keys with valid OSM wiki page.</li>
-<li>OSM_Ontology_map_features.csv - Contains tags collected from OSM map features (https://wiki.openstreetmap.org/wiki/Map_features).</li>
-<li>requirements.txt - Contains versions of python libraries used.</li>
-<li>CreateTriples.py - Main python file to create the WorldKG instance triples.</li>
-<li>WorldKG_Ontology.ttl - WorldKG ontology triples in .ttl format.</li>
-<li>Manual Annotations Sample Set - In this folder, we provide the entities and classes used for evaluation of the tag-to-class mapping in WorldKG.</li>
+#### Data    
+When using the full WorldKG pipeline, intermediate states of the pipeline are written to the data folder. The initial triplets and a csv containing all matched entities and their confidence score can be found here.
 
 ### Reference:
 If you find our work useful in your research please consider citing our paper.
