@@ -52,6 +52,9 @@ For faster processing triplets can be created individually and joined later. To 
 #### Data    
 When using the full WorldKG pipeline, intermediate states of the pipeline are written to the data folder. The initial triplets and a csv containing all matched entities and their confidence score can be found here.
 
+#### Importing the TTL files  
+When using the ttl files for query access e.g. in a database, import the `WorldKG_Ontology.ttl` file before importing the WorldKG triplets.  
+
 ### Reference:
 If you find our work useful in your research please consider citing our paper.
 
