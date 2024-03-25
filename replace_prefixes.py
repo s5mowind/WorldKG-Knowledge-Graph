@@ -74,6 +74,7 @@ def main() -> None:
         # loop input directory
         for s in os.listdir(args.input_dir):
             if re.match(r'.*.ttl$', s):
+                print(f'processing: {s}')
                 replace_and_save(replacements, os.path.join(args.input_dir, s), os.path.join(args.output_dir, s))
 
     else:
