@@ -4,7 +4,7 @@ import shutil
 import io
 import os
 
-def replace_and_save(replacements: dict[str, str], input_file: str, output_file:str) -> None:
+def replace_and_save(replacements: dict, input_file: str, output_file:str) -> None:
     prefixes = []
 
     # read unique prefixes and find end of prefix enumeration
