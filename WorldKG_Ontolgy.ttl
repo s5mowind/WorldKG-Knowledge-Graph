@@ -3,7 +3,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix wd: <http://www.wikidata.org/wiki/> .
-@prefix wkgs: <http://www.worldkg.org/schema/> .
+@prefix wkgs: <http://worldkg-dsis.iai.uni-bonn.de:8894/schema/> .
 
 wkgs:10pin dcterms:source <https://wiki.openstreetmap.org/wiki/Tag:sport=10pin> ;
     rdfs:subClassOf wkgs:Sport .
